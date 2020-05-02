@@ -1,1 +1,1 @@
-就chip8的模擬器，未完成，不知道民國幾年才會寫完。
+就chip8的模擬器，目前只能跑test_opcode.ch8，Pong跑起來超級LAG
