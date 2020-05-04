@@ -361,6 +361,7 @@ void Chip8::emulateCycle(){
 						default:
 							break;
 					}
+					this->input = 'G';
 					this->pc += 2;
                     break;
                 case 0x00A1:
@@ -386,12 +387,13 @@ void Chip8::emulateCycle(){
 							}
 							else
 								this->pc += 2;
-							//this->input = 'G';
+							
 							break;
 						default:
 							this->pc += 2;
 							break;
 					}
+					this->input = 'G';
 					this->pc += 2;
                     break;
             }
@@ -483,31 +485,22 @@ void Chip8::drawGraphic(){
     glClearColor(0.0f, 0.0f, 0.0f, 1.0f); // Set background color to black and opaque
     glClear(GL_COLOR_BUFFER_BIT);         // Clear the color buffer (background)
     glPushMatrix();
-    glRotatef(180,0,0,1);
-    glRotatef(180,0.0,1.0,0.0);
-    glTranslatef(-0.5, -0.5, 0);
-    /*system("CLS");
-    for(i=0;i<GFX_Y;i++){
-        for(j=0;j<GFX_X;j++){
-            printf("%d ", this->gfx[i*GFX_X+j]);
-        }
-        printf("\n");
-    }*/
-    
-    for(i=0;i<GFX_Y;i++){
-        glPushMatrix(); 
-            //glRotatef(90,0,0,1);
-            //glTranslatef(0,,0);
-        for(j=0;j<GFX_X;j++){
-            if(this->gfx[i][j]==1){
-                glPushMatrix();
-                    glTranslated((double)j/GFX_X,(double)i/GFX_Y,0);
-                    glCallList(1);
-                glPopMatrix();
-            }
-        }
-        glPopMatrix();
-    }
+		glRotatef(180,0,0,1);
+		glRotatef(180,0.0,1.0,0.0);
+		glTranslatef(-0.5, -0.5, 0);
+		
+		for(i=0;i<GFX_Y;i++){
+			for(j=0;j<GFX_X;j++){
+				switch(this->gfx[i][j]){
+					case 1:
+						glPushMatrix();
+							glTranslated((double)j/GFX_X,(double)i/GFX_Y,0);
+							glCallList(1);
+						glPopMatrix();
+						break;
+				}
+			}
+		}
     glPopMatrix();
     
     glFlush();  // Render now    
@@ -522,7 +515,7 @@ void Chip8::printMemory(){
 }
 void createList(){
 	glNewList(1,GL_COMPILE);
-		glScalef(0.01, 0.03, 0);
+		glScalef(0.02, 0.03, 0);
 		glColor3f(1.0,1.0,1.0); // white
 		glBegin(GL_QUADS);              
 			glVertex2f(-0.5f, -0.5f);    // x, y

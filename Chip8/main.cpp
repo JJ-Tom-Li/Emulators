@@ -34,17 +34,30 @@ void keyboard(unsigned char key, int x, int y){
 			break;
     }
 }
-void display() {
-	
-    //Emulate one cycle
+void timer(int t){
+	glutTimerFunc(1000.0/120, timer, 0);
+	//Emulate one cycle
     myChip8.emulateCycle();
     
     //Update the screen if the draw flag is set.
-    if(myChip8.drawFlag==1)
-        myChip8.drawGraphic();
+    //if(myChip8.drawFlag==1)
+    //    myChip8.drawGraphic();
+
+    //glutPostRedisplay();
+    //Sleep((double)1000/120);
+}
+void display() {
+	
+    //Emulate one cycle
+    //myChip8.emulateCycle();
+    
+    //Update the screen if the draw flag is set.
+    //if(myChip8.drawFlag==1)
+    myChip8.drawGraphic();
 
     glutPostRedisplay();
-    Sleep((double)1000/240);
+	//glutTimerFunc(1000.0/60, display, 0);
+    //Sleep((double)1000/120);
 }
 int main(int argc, char **argv)
 {
@@ -63,8 +76,10 @@ int main(int argc, char **argv)
     glutCreateWindow("OpenGL Setup Test"); // Create a window with the given title
     glutKeyboardFunc(keyboard);
     glutDisplayFunc(display); // Register display callback handler for window re-paint
-    glutIdleFunc(display);
+    //glutIdleFunc(display);
 	createList();
+	glutTimerFunc( 1000.0/120, timer, 0); ///註冊一個計時器函式, 第一次進入時間是 10 msec 後呼叫
+	timer(0) ;
     glutMainLoop();           // Enter the event-processing loop
     
      
