@@ -416,12 +416,13 @@ void Chip8::emulateCycle(){
 							}
 							else{
 								this->pc += 2;
-								this->input = 'G';
+								//this->input = 'G';
 							}
 							
 							break;
 						default:
 							this->pc += 2;
+							//this->input = 'G';
 							break;
 					}
 					//this->input = 'G';
@@ -463,7 +464,7 @@ void Chip8::emulateCycle(){
                     break;
                 case 0x0029:
                     //printf("LD F, V%x\n", (this->opcode & 0x0F00) >> 8);
-                    this->I = this->V[ (this->opcode & 0x0F00) >> 8] * 5;
+                    this->I = this->V[ (this->opcode & 0x0F00) >> 8] /8;
                     this->pc += 2;
                     break;
                 case 0x0033:

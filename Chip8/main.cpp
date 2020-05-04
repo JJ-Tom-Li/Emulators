@@ -32,6 +32,7 @@ void keyboard(unsigned char key, int x, int y){
             myChip8.input = key;
             break;
 		default:
+			 myChip8.input = 'G';
 			break;
     }
 }
