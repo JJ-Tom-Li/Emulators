@@ -30,40 +30,21 @@ void keyboard(unsigned char key, int x, int y){
         case 'F':
             myChip8.input = key;
             break;
+		default:
+			break;
     }
 }
 void display() {
-    //for (int i=0;i<4096;i++)
-    //    printf("%x ",myChip8.memory[i]);
-
-    //Emulation Loop
-    
+	
     //Emulate one cycle
     myChip8.emulateCycle();
-    // char a;
-    // //while(scanf("%c",&a)!=EOF){
-    //     //if(myChip8.mode==0)
-    //     //    myChip8.drawGraphic();  
-    //     if (a=='\n' || a=='e')
-    //         break;
-    //     if (a=='d'){
-    //         myChip8.drawGraphic();
-    //     }
-    //     if (a=='m'){
-    //         myChip8.printMemory();
-    //     } 
-    // //}
     
-    // if(a=='e')
-    //     break;
     //Update the screen if the draw flag is set.
     if(myChip8.drawFlag==1)
         myChip8.drawGraphic();
 
-        //Store key press state(Press and Release)
-        //myChip8.setKeys();
     glutPostRedisplay();
-    Sleep((double)1000/60);
+    Sleep((double)1000/240);
 }
 int main(int argc, char **argv)
 {
@@ -83,6 +64,7 @@ int main(int argc, char **argv)
     glutKeyboardFunc(keyboard);
     glutDisplayFunc(display); // Register display callback handler for window re-paint
     glutIdleFunc(display);
+	createList();
     glutMainLoop();           // Enter the event-processing loop
     
      

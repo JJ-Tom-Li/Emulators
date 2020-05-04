@@ -24,7 +24,7 @@ class Chip8{
                                         0x050-0x0A0 - Used for the built in 4x5 pixel font set (0-F)
                                         0x200-0xFFF - Program ROM and work RAM
                                     */
-        unsigned char gfx[GFX_Y*GFX_X];   //The graphics system.Totally 2048 pixels
+        unsigned char gfx[GFX_Y][GFX_X];   //The graphics system.Totally 2048 pixels
         unsigned char delay_timer;
         unsigned char sound_timer;  //The Chip 8 has no Interupts and hardware registers, but there are two timer registers that count at 60 Hz. When set above zero they will count down to zero.
                                     //The system’s buzzer sounds whenever the sound timer reaches zero.
@@ -33,11 +33,13 @@ class Chip8{
         unsigned char key[16];      //The key pad
         char input;
         unsigned short drawFlag;    //1 is draw.
+		
         Chip8();
         void loadGame(char* filename);
         void emulateCycle();
         void drawGraphic();
         void printMemory();
+		void showRegisters();
 };
 Chip8::Chip8(){
     int i,j;
@@ -52,7 +54,7 @@ Chip8::Chip8(){
     //Clear display
     for(i=0;i<GFX_Y;i++)
         for(j=0;j<GFX_X;j++)
-            this->gfx[i*GFX_X+j] = 0;
+            this->gfx[i][j] = 0;
 
     //Clear stack
     this->sp = 0;
@@ -73,8 +75,8 @@ Chip8::Chip8(){
     // }
 
     //Rest timers
-    this->delay_timer = 60;
-    this->sound_timer = 60;
+    this->delay_timer = 59;
+    this->sound_timer = 59;
 }
 void Chip8::loadGame(char* filename){
     //Open the code file in binary.
@@ -101,17 +103,28 @@ void Chip8::loadGame(char* filename){
             this->memory[i+512] = buffer[i];  
     }
 }
-void Chip8::emulateCycle(){
-    int x,y;
-    unsigned char rnd;
-    //Fetch Opcode
-    printf("----------------------------------------\n");
+void Chip8::showRegisters(){
+	printf("----------------------------------------\n");
     printf("pc:%x\n",this->pc);
     printf("delay_timer:%d\n",this->delay_timer);
     printf("sound_timer:%d\n",this->sound_timer);
-    this->opcode = this->memory[this->pc] << 8 | this->memory[this->pc+1];
+	printf("I:%x\n",this->I);
+	printf("V: ");
+	for(int i=0;i<16;i++)
+		printf("%x ", this->V[i]);
+    printf("\nopcode:%x \n",this->opcode);
+}
+void Chip8::emulateCycle(){
+    int x,y;
+    unsigned char rnd;
+	int memory_tmp;
+	int erase,n;
+	char move;
+    //Fetch Opcode
     
-    printf("opcode:%x ,",this->opcode);
+    this->opcode = this->memory[this->pc] << 8 | this->memory[this->pc+1];
+	
+    //showRegisters();
     //Decode Opcode
     switch(this->opcode & 0xF000)
     {
@@ -121,23 +134,18 @@ void Chip8::emulateCycle(){
             {
                 case 0x0000: //0x00E0 Clear the screen
                     //Execute Opcode
-                     printf("Clear the screen\n");
+                    // printf("Clear the screen\n");
                     //Clear display
                     for(int i=0;i<GFX_Y;i++)
                         for(int j=0;j<GFX_X;j++)
-                            this->gfx[i*GFX_X+j] = 0;
+                            this->gfx[i][j] = 0;
                     this->drawFlag = 1;
-                    //glClearColor(0.0f, 0.0f, 0.0f, 1.0f); // Set background color to black and opaque
-                    //glClear(GL_COLOR_BUFFER_BIT);         // Clear the color buffer (background)
                     this->pc += 2;
 
                     break;
                 case 0x000E: // 0x00EE: Returns from subroutine
                     // Execute opcode
-                    printf("Returns from subroutine\n");
-                    //for(int i=0;i<STACK_SIZE;i++)
-                    //    printf("%x ",this->stack[i]);
-                    //printf("\n");
+                    //printf("Returns from subroutine\n");
                     this->pc = this->stack[this->sp-1] + 2;
                     this->sp--;
                     break;
@@ -148,50 +156,50 @@ void Chip8::emulateCycle(){
 
         //1 part
         case 0x1000:
-            printf("JP %x\n", this->opcode & 0x0FFF);
-            //printf("%x\n",this->pc); 
+            //printf("JP %x\n", this->opcode & 0x0FFF);
             this->pc = this->opcode & 0x0FFF;
-            //printf("%x\n",this->pc); 
             break;
 
         //2 part
         case 0x2000:
-            printf("Push pc to stack\n");
+            //printf("Push pc to stack\n");
             this->stack[this->sp] = this->pc;
             ++this->sp;
             this->pc = this->opcode & 0x0FFF;
             break;
         //3 part
         case 0x3000:
-            printf("SE V%x, %x\n", (this->opcode & 0x0F00) >> 8, this->opcode & 0x00FF);
-            if(this->V[(this->opcode & 0x0F00) >> 8] == (this->opcode & 0x00FF))
-                this->pc +=2;
+            //printf("SE V%x, %x\n", (this->opcode & 0x0F00) >> 8, this->opcode & 0x00FF);
+            if(this->V[(this->opcode & 0x0F00) >> 8] == (this->opcode & 0x00FF)){
+				//printf("out\n");
+				this->pc +=2;
+			}
             this->pc +=2;    
             break;
         //4 part
         case 0x4000:
-            printf("SNE V%x, %x\n", (this->opcode & 0x0F00) >> 8, this->opcode & 0x00FF);
+            //printf("SNE V%x, %x\n", (this->opcode & 0x0F00) >> 8, this->opcode & 0x00FF);
             if(this->V[(this->opcode & 0x0F00) >> 8] != (this->opcode & 0x00FF))
                 this->pc +=2;
             this->pc +=2;    
             break;
         //5 part
         case 0x5000:
-            printf("SE V%x, V%x\n", (this->opcode & 0x0F00) >> 8, (this->opcode & 0x00F0) >> 4);
-            if(this->V[(this->opcode & 0x0F00) >> 8] == ((this->opcode & 0x00F0) >> 4))
+            //printf("SE V%x, V%x\n", (this->opcode & 0x0F00) >> 8, (this->opcode & 0x00F0) >> 4);
+            if(this->V[(this->opcode & 0x0F00) >> 8] == this->V[((this->opcode & 0x00F0) >> 4)])
                 this->pc +=2;
             this->pc +=2;    
             break;
         //6 part
         case 0x6000:
-            printf("LD V%x, %x\n", (this->opcode & 0x0F00) >> 8, this->opcode & 0x00FF);
-            this->V[((this->opcode & 0x0F00) >> 8)] = this->opcode & 0x00FF;
+            //printf("LD V%x, %x\n", (this->opcode & 0x0F00) >> 8, this->opcode & 0x00FF);
+            this->V[((this->opcode & 0x0F00) >> 8)] = (this->opcode & 0x00FF);
             this->pc += 2;
             break;
         //7 part
         case 0x7000:
-            printf("ADD V%x, %x\n",(this->opcode & 0x0F00) >> 8, this->opcode & 0x00FF);
-            this->V[(this->opcode & 0x0F00) >> 8] += this->opcode & 0x00FF;
+            //printf("ADD V%x, %x\n",(this->opcode & 0x0F00) >> 8, this->opcode & 0x00FF);
+            this->V[(this->opcode & 0x0F00) >> 8] += (this->opcode & 0x00FF);
             this->pc+=2;
             break;
         //8 part
@@ -199,36 +207,39 @@ void Chip8::emulateCycle(){
             switch(this->opcode & 0x000F)
             {
                 case 0x0000:
-                    printf("LD V%x, V%x\n", (this->opcode & 0x0F00) >> 8, (this->opcode & 0x00F0) >> 4);
+                    //printf("LD V%x, V%x\n", (this->opcode & 0x0F00) >> 8, (this->opcode & 0x00F0) >> 4);
                     this->V[(this->opcode & 0x0F00) >> 8] = this->V[(this->opcode & 0x00F0) >> 4];
                     this->pc += 2;
                     break;
                 case 0x0001:
-                    printf("OR V%x, V%x\n", (this->opcode & 0x0F00) >> 8, (this->opcode & 0x00F0) >> 4);
+                    //printf("OR V%x, V%x\n", (this->opcode & 0x0F00) >> 8, (this->opcode & 0x00F0) >> 4);
                     this->V[(this->opcode & 0x0F00) >> 8] = this->V[(this->opcode & 0x0F00) >> 8] | this->V[(this->opcode & 0x00F0) >> 4];
                     this->pc += 2;
                     break;
                 case 0x0002:
-                    printf("AND V%x, V%x\n", (this->opcode & 0x0F00) >> 8, (this->opcode & 0x00F0) >> 4);
+                    //printf("AND V%x, V%x\n", (this->opcode & 0x0F00) >> 8, (this->opcode & 0x00F0) >> 4);
                     this->V[(this->opcode & 0x0F00) >> 8] = this->V[(this->opcode & 0x0F00) >> 8] & this->V[(this->opcode & 0x00F0) >> 4];
                     this->pc += 2;
                     break;
                 case 0x0003:
-                    printf("XOR V%x, V%x\n", (this->opcode & 0x0F00) >> 8, (this->opcode & 0x00F0) >> 4);
+                    //printf("XOR V%x, V%x\n", (this->opcode & 0x0F00) >> 8, (this->opcode & 0x00F0) >> 4);
                     this->V[(this->opcode & 0x0F00) >> 8] = this->V[(this->opcode & 0x0F00) >> 8] ^ this->V[(this->opcode & 0x00F0) >> 4];
                     this->pc += 2;
                     break;
                 case 0x0004:
-                    printf("ADD V%x, V%x\n", (this->opcode & 0x0F00) >> 8, (this->opcode & 0x00F0) >> 4);
-                    if(this->V[(this->opcode & 0x00F0) >> 4]> (0xFF - this->V[(this->opcode & 0x0F00) >> 8]))
+                    //printf("ADD V%x, V%x\n", (this->opcode & 0x0F00) >> 8, (this->opcode & 0x00F0) >> 4);
+                    if(this->V[(this->opcode & 0x00F0) >> 4]> (0xFF - this->V[(this->opcode & 0x0F00) >> 8])){
                         this->V[0xF] = 1; //carry
-                    else
+						this->V[(this->opcode & 0x0F00) >> 8] += this->V[(this->opcode & 0x00F0) >> 4] - (0xFF - this->V[(this->opcode & 0x0F00) >> 8]);
+					}
+                    else{
                         this->V[0xF] = 0;
-                    this->V[(this->opcode & 0x0F00) >> 8] += this->V[(this->opcode & 0x00F0) >> 4] - (0xFF - this->V[(this->opcode & 0x0F00) >> 8]);
-                    this->pc += 2;
+						this->V[(this->opcode & 0x0F00) >> 8] += this->V[(this->opcode & 0x00F0) >> 4]; // - (0xFF - this->V[(this->opcode & 0x0F00) >> 8]);
+                    }
+					this->pc += 2;
                     break;
                 case 0x0005:
-                    printf("SUB V%x, V%x\n", (this->opcode & 0x0F00) >> 8, (this->opcode & 0x00F0) >> 4);
+                    //printf("SUB V%x, V%x\n", (this->opcode & 0x0F00) >> 8, (this->opcode & 0x00F0) >> 4);
                     if(this->V[(this->opcode & 0x00F0) >> 4] > this->V[(this->opcode & 0x0F00) >> 8])
                         this->V[0xF] = 1; 
                     else
@@ -237,7 +248,7 @@ void Chip8::emulateCycle(){
                     this->pc += 2;
                     break;
                 case 0x0006:
-                     printf("SHR V%x{, V%x}\n", (this->opcode & 0x0F00) >> 8, (this->opcode & 0x00F0) >> 4);
+                    // printf("SHR V%x{, V%x}\n", (this->opcode & 0x0F00) >> 8, (this->opcode & 0x00F0) >> 4);
                     if(this->V[(this->opcode & 0x0F00) >> 8] & 0x0001 == 0x0001)
                         this->V[0xF] = 1;
                     else
@@ -246,7 +257,7 @@ void Chip8::emulateCycle(){
                     this->pc += 2;
                     break;
                 case 0x0007:
-                     printf("SUBN V%x, V%x\n", (this->opcode & 0x0F00) >> 8, (this->opcode & 0x00F0) >> 4);
+                    // printf("SUBN V%x, V%x\n", (this->opcode & 0x0F00) >> 8, (this->opcode & 0x00F0) >> 4);
                     if(this->V[(this->opcode & 0x00F0) >> 4] < this->V[(this->opcode & 0x0F00) >> 8])
                         this->V[0xF] = 1; 
                     else
@@ -255,8 +266,8 @@ void Chip8::emulateCycle(){
                     this->pc += 2;
                     break;
                 case 0x000E:
-                     printf("SHL V%x{, V%x}\n", (this->opcode & 0x0F00) >> 8, (this->opcode & 0x00F0) >> 4);
-                    if((this->V[(this->opcode & 0x0F00) >> 8] & 0x8000)== 0x1000)
+                    // printf("SHL V%x{, V%x}\n", (this->opcode & 0x0F00) >> 8, (this->opcode & 0x00F0) >> 4);
+                    if((this->V[(this->opcode & 0x0F00) >> 8] & 0x8000)== 0x8000)
                         this->V[0xF] = 1;
                     else
                         this->V[0xF] = 0;
@@ -270,69 +281,118 @@ void Chip8::emulateCycle(){
             break;
         //9 part
         case 0x9000:
-             printf("SNE V%x, V%x\n", (this->opcode & 0x0F00) >> 8, (this->opcode & 0x00F0) >> 4);
-            if(this->V[(this->opcode & 0x0F00) >> 8] != ((this->opcode & 0x00F0) >> 4))
+           //  printf("SNE V%x, V%x\n", (this->opcode & 0x0F00) >> 8, (this->opcode & 0x00F0) >> 4);
+            if(this->V[(this->opcode & 0x0F00) >> 8] != this->V[((this->opcode & 0x00F0) >> 4)])
                 this->pc +=2;
             this->pc +=2;    
             break;
         //A part    
         case 0xA000:
             //Execute Opcode
-             printf("LD I, %x\n", this->opcode & 0x0FFF);
+            // printf("LD I, %x\n", this->opcode & 0x0FFF);
             this->I = (this->opcode & 0x0FFF);
             this->pc +=2;
             break;
         //B part
         case 0xB000:
-            printf("JP V0, %x\n",this->opcode & 0x0FFF);
+            //printf("JP V0, %x\n",this->opcode & 0x0FFF);
             this->pc = (this->opcode & 0x0FFF) + this->V[0x0];
             break;
         //C part
         case 0xC000:
-            printf("RND V%x, byte\n", this->opcode & 0x0F00 >> 8);
+            //printf("RND V%x, byte\n", this->opcode & 0x0F00 >> 8);
             rnd= this->delay_timer % 0x0100;
             this->V[(this->opcode & 0x00FF) >> 8] = this->opcode & 0x00FF & rnd;
             this->pc +=2;
             break;
         //D part
         case 0xD000:
-            printf("DRW V%x, V%x, %xibble\n", (this->opcode & 0x0F00) >> 8, (this->opcode & 0x00F0) >> 4, this->opcode & 0x000F);
+            //printf("DRW V%x, V%x, %xibble\n", (this->opcode & 0x0F00) >> 8, (this->opcode & 0x00F0) >> 4, this->opcode & 0x000F);
             
-            y = this->V[((this->opcode & 0x00F0) >> 4)];
-            x = (y)* (GFX_X-1) + this->V[((this->opcode & 0x0F00) >> 8)] ;
+            x = this->V[((this->opcode & 0x00F0) >> 4)];
+            y = this->V[((this->opcode & 0x0F00) >> 8)] ;
             this->V[0xF] = 0;
-            for(int i=0;i<(this->opcode & 0x000F);i++){
-                for(int j=0;j<8;j++){
-                    //printf("%x\n",(memory[I+i] >> (j+1)) & 1);
-                    //printf("%d,%d\n",i,x+y+i*GFX_X+j); 
-                    this->gfx[x+y+i*GFX_X+j]=this->gfx[x+y+i*GFX_X+j]^((memory[this->I+i] >> (7-j+1)) & 1);
+			n = (this->opcode & 0x000F);
+            for(int i=0;i<n;++i){
+				memory_tmp = memory[this->I+i];
+                for(int j=0;j<8;++j){ 
+					erase = this->gfx[x+i][y+j]^(( memory_tmp >> (6-j+1)) & 1);
                     //if(this->gfx[x+y+i*GFX_X+j]!=this->gfx[x+y+i*GFX_X+j]^((memory[this->I+i] >> (7-j+1)) & 1))
-                    if(this->gfx[x+y+i*GFX_X+j] == 0)
-                        this->V[0xF] = 1;
-                    }
+                    switch(this->gfx[x+i][y+j] - erase){
+						case 1:
+							this->V[0xF] = 1;
+							break;
+					}
+					this->gfx[x+i][y+j] = erase;
+				}
             }
             this->pc +=2;
             this->drawFlag = 1; //Set draw flag.
             break;
         //E part
         case 0xE000:
+			move = this->input - '0';
             switch(this->opcode & 0x00FF){
                 case 0x009E:
-                    printf("SKP V%x\n",(this->opcode & 0x0F00) >> 8);
-                    if((this->input - '0' ) == this->V[(this->opcode & 0x0F00) >> 8]){
-                        this->pc += 2;
-                        this->input = 'G';
-                    }
-                    this->pc += 2;
+					switch(move){
+						case 0x0:
+						case 0x1:
+						case 0x2:
+						case 0x3:
+						case 0x4:
+						case 0x5:
+						case 0x6:
+						case 0x7:
+						case 0x8:
+						case 0x9:
+						case 0x10:
+						case 0x11:
+						case 0x12:
+						case 0x13:
+						case 0x14:
+						case 0x15:
+							if(move == this->V[(this->opcode & 0x0F00) >> 8]){
+								//printf("SE Move %c\n",this->input);
+								this->pc += 2;
+								
+								//this->input = 'G';
+							}
+							break;
+						default:
+							break;
+					}
+					this->pc += 2;
                     break;
                 case 0x00A1:
-                    printf("SKNP V%x\n",(this->opcode & 0x0F00) >> 8);
-                    if(this->input != 'G')
-                        if((this->input - '0' ) != this->V[(this->opcode & 0x0F00) >> 8]){
-                            this->pc += 2;
-                            this->input = 'G';
-                        }
-                    this->pc += 2;
+                    switch(move){
+						case 0x0:
+						case 0x1:
+						case 0x2:
+						case 0x3:
+						case 0x4:
+						case 0x5:
+						case 0x6:
+						case 0x7:
+						case 0x8:
+						case 0x9:
+						case 0x10:
+						case 0x11:
+						case 0x12:
+						case 0x13:
+						case 0x14:
+						case 0x15:
+							if(move == this->V[(this->opcode & 0x0F00) >> 8]){
+								//printf("SNE Move %c\n",this->input);
+							}
+							else
+								this->pc += 2;
+							//this->input = 'G';
+							break;
+						default:
+							this->pc += 2;
+							break;
+					}
+					this->pc += 2;
                     break;
             }
             break;
@@ -341,51 +401,53 @@ void Chip8::emulateCycle(){
             switch(this->opcode & 0x00FF)
             {
                 case 0x0007:
-                    printf("LD V%x, DT\n",(this->opcode & 0x0F00) >> 8);
+                    //printf("LD V%x, DT\n",(this->opcode & 0x0F00) >> 8);
                     this->V[(this->opcode & 0x0F00) >> 8] = this->delay_timer;
                     this->pc+=2;
                     break;
                 case 0x000A:
+					printf("Getting\n");
                     if(this->input!='G'){
                         printf("Get input %c\n",this->input);
+						this->V[(this->opcode & 0x0F00) >> 8] = this->input - '0';
                         this->pc += 2;
                     }
                     break;
                 case 0x0015:
-                    printf("LD DT, V%x\n",(this->opcode & 0x0F00) >> 8);
-                    this->delay_timer = this->V[(this->opcode & 0x0F00) >> 8];
+                    //printf("LD DT, V%x\n",(this->opcode & 0x0F00) >> 8);
+                    this->delay_timer = this->V[(this->opcode & 0x0F00) >> 8] ;
                     this->pc += 2;
                     break;
                 case 0x0018:
-                    printf("LD ST, V%x\n",(this->opcode & 0x0F00) >> 8);
-                    this->sound_timer = this->V[(this->opcode & 0x0F00) >> 8];
+                    //printf("LD ST, V%x\n",(this->opcode & 0x0F00) >> 8);
+                    this->sound_timer = this->V[(this->opcode & 0x0F00) >> 8] ;
                     this->pc += 2;
                     break;
                 case 0x001E:
-                    printf("ADD I, V%x\n",(this->opcode & 0x0F00) >> 8);
-                    this->I += (this->opcode & 0x0F00) >> 8;
+                    //printf("ADD I, V%x\n",(this->opcode & 0x0F00) >> 8);
+                    this->I += this->V[(this->opcode & 0x0F00) >> 8];
                     this->pc += 2;
                     break;
                 case 0x0029:
-                    printf("LD F, V%x\n", (this->opcode & 0x0F00) >> 8);
-                    this->I = this->V[ (this->opcode & 0x0F00) >> 8] * 8;
+                    //printf("LD F, V%x\n", (this->opcode & 0x0F00) >> 8);
+                    this->I = this->V[ (this->opcode & 0x0F00) >> 8] * 5;
                     this->pc += 2;
                     break;
                 case 0x0033:
-                    printf("memory I V\n");
+                    //printf("memory I V\n");
                     this->memory[this->I]     = this->V[(this->opcode & 0x0F00) >> 8] / 100;
                     this->memory[this->I + 1] = (this->V[(this->opcode & 0x0F00) >> 8] / 10) % 10;
                     this->memory[this->I + 2] = (this->V[(this->opcode & 0x0F00) >> 8] % 100) % 10;
                     this->pc += 2;
                     break;
                 case 0x0055:
-                    printf("LD [I], V%x\n",(this->opcode & 0x0F00) >> 8);
+                    //printf("LD [I], V%x\n",(this->opcode & 0x0F00) >> 8);
                     for(int i=0;i<=((this->opcode & 0x0F00) >> 8);i++)
                         this->memory[this->I+i] = this->V[i];
                     this->pc+=2;
                     break;
                 case 0x0065:
-                    printf("LD V%x, [I]\n",(this->opcode & 0x0F00) >> 8);
+                    //printf("LD V%x, [I]\n",(this->opcode & 0x0F00) >> 8);
                     for(int i=0;i<=((this->opcode & 0x0F00) >> 8);i++)
                         this->V[i] = this->memory[this->I+i];
                     this->pc+=2;
@@ -395,7 +457,7 @@ void Chip8::emulateCycle(){
         default:
              printf("Unknown opcode 0x%X\n",this->opcode);
     }
-    printf("----------------------------------------\n");
+	
     if(this->pc > 0xFFF)
         this->pc = 0x200;
     //Update timers
@@ -437,18 +499,10 @@ void Chip8::drawGraphic(){
             //glRotatef(90,0,0,1);
             //glTranslatef(0,,0);
         for(j=0;j<GFX_X;j++){
-            if(this->gfx[i*GFX_X+j]==1){
+            if(this->gfx[i][j]==1){
                 glPushMatrix();
                     glTranslated((double)j/GFX_X,(double)i/GFX_Y,0);
-                    glScalef(0.01, 0.03, 0);
-                    glBegin(GL_QUADS);              
-                        //glColor3f((double)i/GFX_Y, (double)j/GFX_Y, 1.0f); // 
-                        glColor3f(1.0,1.0,1.0); // white
-                        glVertex2f(-0.5f, -0.5f);    // x, y
-                        glVertex2f( 0.5f, -0.5f);
-                        glVertex2f( 0.5f,  0.5f);
-                        glVertex2f(-0.5f,  0.5f);
-                    glEnd();
+                    glCallList(1);
                 glPopMatrix();
             }
         }
@@ -465,5 +519,17 @@ void Chip8::printMemory(){
     for(i=0;i<MEMORY_SIZE;i++)
         printf("%x ",this->memory[i]);
     printf("\n");
+}
+void createList(){
+	glNewList(1,GL_COMPILE);
+		glScalef(0.01, 0.03, 0);
+		glColor3f(1.0,1.0,1.0); // white
+		glBegin(GL_QUADS);              
+			glVertex2f(-0.5f, -0.5f);    // x, y
+			glVertex2f( 0.5f, -0.5f);
+			glVertex2f( 0.5f,  0.5f);
+			glVertex2f(-0.5f,  0.5f);
+		glEnd();
+	glEndList();
 }
 #endif
