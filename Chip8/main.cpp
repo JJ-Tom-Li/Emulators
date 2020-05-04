@@ -7,6 +7,7 @@
 /*
     This program is CHIP-8 Emulator.
 */
+#define FPS 240
 char *filename; 
 //Initialize chip8 system and load game into memory.
 Chip8 myChip8 = Chip8();
@@ -35,7 +36,7 @@ void keyboard(unsigned char key, int x, int y){
     }
 }
 void timer(int t){
-	glutTimerFunc(1000.0/120, timer, 0);
+	glutTimerFunc(1000.0/FPS, timer, 0);
 	//Emulate one cycle
     myChip8.emulateCycle();
     
@@ -61,9 +62,6 @@ void display() {
 }
 int main(int argc, char **argv)
 {
-    //Set up render system and register input callbacks
-    //setupGraphics();
-    //setupInput();
     
     filename = argv[1];
     int a = 1; 
@@ -78,7 +76,7 @@ int main(int argc, char **argv)
     glutDisplayFunc(display); // Register display callback handler for window re-paint
     //glutIdleFunc(display);
 	createList();
-	glutTimerFunc( 1000.0/120, timer, 0); ///註冊一個計時器函式, 第一次進入時間是 10 msec 後呼叫
+	glutTimerFunc( 1000.0/FPS, timer, 0); ///註冊一個計時器函式, 第一次進入時間是 10 msec 後呼叫
 	timer(0) ;
     glutMainLoop();           // Enter the event-processing loop
     

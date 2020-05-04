@@ -3,6 +3,7 @@
 #define CHIP_8_H
 
 #include <stdio.h>
+#include <stdlib.h>
 #include "include/GL/glew.h"
 #include "include/GL/glut.h"
 /*CPU Specifications*/
@@ -10,6 +11,24 @@
 #define STACK_SIZE 16 //Size of stack
 #define GFX_X 64
 #define GFX_Y 32 //Size of graphics
+unsigned char chip8_fontset[80] = {
+	0xF0,0x90,0x90,0x90,0xF0, /*"0"*/
+	0x20,0x60,0x20,0x20,0x70, /*"1"*/
+	0xF0,0x10,0xF0,0x80,0xF0, /*"2"*/
+	0xF0,0x10,0xF0,0x10,0xF0, /*"3"*/
+	0x90,0x90,0xF0,0x10,0x10, /*"4"*/
+	0xF0,0x80,0xF0,0x10,0xF0, /*"5"*/
+	0xF0,0x80,0xF0,0x90,0xF0, /*"6"*/
+	0xF0,0x10,0x20,0x40,0x40, /*"7"*/
+	0xF0,0x90,0xF0,0x90,0xF0, /*"8"*/
+	0xF0,0x90,0xF0,0x10,0xF0, /*"9"*/
+	0xF0,0x90,0xF0,0x90,0x90, /*"10"*/
+	0xE0,0x90,0xE0,0x90,0xE0, /*"11"*/
+	0xF0,0x80,0x80,0x80,0xF0, /*"12"*/
+	0xE0,0x90,0x90,0x90,0xE0, /*"13"*/
+	0xF0,0x80,0xF0,0x80,0xF0, /*"14"*/
+	0xF0,0x80,0xF0,0x80,0x80  /*"15"*/
+};
 class Chip8{
     public:
 
@@ -50,7 +69,8 @@ Chip8::Chip8(){
     this->sp = 0;             //Rest Stack Pointer
     this->drawFlag = 0;
     this->input = 'G';
-
+	srand(234);
+	
     //Clear display
     for(i=0;i<GFX_Y;i++)
         for(j=0;j<GFX_X;j++)
@@ -68,11 +88,12 @@ Chip8::Chip8(){
     //Clear memory
     for(i=0;i<MEMORY_SIZE;i++)
         this->memory[i]=0;
+	
     //Load font set
-    // for(i=0;i<80;++i)
-    // {
-    //     memory[i]=chip8_fontset[i];
-    // }
+    for(i=0;i<80;++i)
+    {
+        this->memory[i]=chip8_fontset[i];
+    }
 
     //Rest timers
     this->delay_timer = 59;
@@ -230,7 +251,7 @@ void Chip8::emulateCycle(){
                     //printf("ADD V%x, V%x\n", (this->opcode & 0x0F00) >> 8, (this->opcode & 0x00F0) >> 4);
                     if(this->V[(this->opcode & 0x00F0) >> 4]> (0xFF - this->V[(this->opcode & 0x0F00) >> 8])){
                         this->V[0xF] = 1; //carry
-						this->V[(this->opcode & 0x0F00) >> 8] += this->V[(this->opcode & 0x00F0) >> 4] - (0xFF - this->V[(this->opcode & 0x0F00) >> 8]);
+						this->V[(this->opcode & 0x0F00) >> 8] = this->V[(this->opcode & 0x00F0) >> 4] - (0x100 - this->V[(this->opcode & 0x0F00) >> 8]);
 					}
                     else{
                         this->V[0xF] = 0;
@@ -240,11 +261,14 @@ void Chip8::emulateCycle(){
                     break;
                 case 0x0005:
                     //printf("SUB V%x, V%x\n", (this->opcode & 0x0F00) >> 8, (this->opcode & 0x00F0) >> 4);
-                    if(this->V[(this->opcode & 0x00F0) >> 4] > this->V[(this->opcode & 0x0F00) >> 8])
+                    if(this->V[(this->opcode & 0x00F0) >> 4] > this->V[(this->opcode & 0x0F00) >> 8]){
                         this->V[0xF] = 1; 
-                    else
+						this->V[(this->opcode & 0x0F00) >> 8] -= this->V[(this->opcode & 0x00F0) >> 4];
+					}
+                    else{
                         this->V[0xF] = 0;
-                    this->V[(this->opcode & 0x0F00) >> 8] -= this->V[(this->opcode & 0x00F0) >> 4];
+						this->V[(this->opcode & 0x0F00) >> 8] += (0x100 - this->V[(this->opcode & 0x00F0) >> 4]);
+					}
                     this->pc += 2;
                     break;
                 case 0x0006:
@@ -267,7 +291,8 @@ void Chip8::emulateCycle(){
                     break;
                 case 0x000E:
                     // printf("SHL V%x{, V%x}\n", (this->opcode & 0x0F00) >> 8, (this->opcode & 0x00F0) >> 4);
-                    if((this->V[(this->opcode & 0x0F00) >> 8] & 0x8000)== 0x8000)
+                    //printf("%x\n",(this->V[(this->opcode & 0x0F00) >> 8] & 0x0080));
+					if((this->V[(this->opcode & 0x0F00) >> 8] & 0x0080)== 0x0080)
                         this->V[0xF] = 1;
                     else
                         this->V[0xF] = 0;
@@ -275,7 +300,7 @@ void Chip8::emulateCycle(){
                     this->pc += 2;
                     break;
                 default:
-                     printf ("Unknown opcode [0x8000]: 0x%X\n", this->opcode);  
+                    printf ("Unknown opcode [0x8000]: 0x%X\n", this->opcode);  
                     break;
             }
             break;
@@ -301,29 +326,33 @@ void Chip8::emulateCycle(){
         //C part
         case 0xC000:
             //printf("RND V%x, byte\n", this->opcode & 0x0F00 >> 8);
-            rnd= this->delay_timer % 0x0100;
-            this->V[(this->opcode & 0x00FF) >> 8] = this->opcode & 0x00FF & rnd;
+            rnd= rand() % 0x0100;
+            this->V[(this->opcode & 0x00FF) >> 8] = (this->opcode & 0x00FF) & rnd;
             this->pc +=2;
             break;
         //D part
         case 0xD000:
             //printf("DRW V%x, V%x, %xibble\n", (this->opcode & 0x0F00) >> 8, (this->opcode & 0x00F0) >> 4, this->opcode & 0x000F);
             
-            x = this->V[((this->opcode & 0x00F0) >> 4)];
+            x = this->V[((this->opcode & 0x00F0) >> 4)] ;
             y = this->V[((this->opcode & 0x0F00) >> 8)] ;
+			//if(GFX_X-y<8) y=0;
             this->V[0xF] = 0;
 			n = (this->opcode & 0x000F);
             for(int i=0;i<n;++i){
 				memory_tmp = memory[this->I+i];
                 for(int j=0;j<8;++j){ 
-					erase = this->gfx[x+i][y+j]^(( memory_tmp >> (6-j+1)) & 1);
+					int tmpy = ((y+j)>=GFX_X)?(y+j-GFX_X-1):(y+j);
+					tmpy = (tmpy<0)?(GFX_X+tmpy):tmpy;
+					//if(tmpy>+GFX_X) 
+					erase = this->gfx[x+i][tmpy]^(( memory_tmp >> (6-j+1)) & 1);
                     //if(this->gfx[x+y+i*GFX_X+j]!=this->gfx[x+y+i*GFX_X+j]^((memory[this->I+i] >> (7-j+1)) & 1))
-                    switch(this->gfx[x+i][y+j] - erase){
+                    switch(this->gfx[x+i][tmpy] - erase){
 						case 1:
 							this->V[0xF] = 1;
 							break;
 					}
-					this->gfx[x+i][y+j] = erase;
+					this->gfx[x+i][tmpy] = erase;
 				}
             }
             this->pc +=2;
@@ -355,13 +384,13 @@ void Chip8::emulateCycle(){
 								//printf("SE Move %c\n",this->input);
 								this->pc += 2;
 								
-								//this->input = 'G';
+								this->input = 'G';
 							}
 							break;
 						default:
 							break;
 					}
-					this->input = 'G';
+					//this->input = 'G';
 					this->pc += 2;
                     break;
                 case 0x00A1:
@@ -385,15 +414,17 @@ void Chip8::emulateCycle(){
 							if(move == this->V[(this->opcode & 0x0F00) >> 8]){
 								//printf("SNE Move %c\n",this->input);
 							}
-							else
+							else{
 								this->pc += 2;
+								this->input = 'G';
+							}
 							
 							break;
 						default:
 							this->pc += 2;
 							break;
 					}
-					this->input = 'G';
+					//this->input = 'G';
 					this->pc += 2;
                     break;
             }
