@@ -1,2 +1,2 @@
 main: main.cpp
-	g++ -std=c++11 main.cpp -L lib -lfreeglut -lglew32 -lopengl32 
+	g++ -std=c++11 main.cpp -L lib -lfreeglut -lopengl32 

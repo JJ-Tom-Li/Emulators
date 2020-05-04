@@ -2,8 +2,6 @@
 #include <stdlib.h>
 #include "chip8.h"  //The chip8 cpu core implementation
 #include <windows.h>  // for MS Windows
-//#include "include/GL/glew.h"
-//#include "include/GL/glut.h"
 /*
     This program is CHIP-8 Emulator.
 */
@@ -23,43 +21,46 @@ void keyboard(unsigned char key, int x, int y){
         case '8':
         case '9':
         case '0':
-        case 'A':
-        case 'B':
-        case 'C':
-        case 'D':
-        case 'E':
-        case 'F':
-            myChip8.input = key;
+			myChip8.input = key - '0';
+            break;
+        case 'a':
+        case 'b':
+        case 'c':
+        case 'd':
+        case 'e':
+        case 'f':
+            myChip8.input = key - '7'-' ';
+            break;
+		case 'A':
+		case 'B':
+		case 'C':
+		case 'D':
+		case 'E':
+		case 'F':
+            myChip8.input = key - '7';
             break;
 		default:
 			 myChip8.input = 'G';
 			break;
     }
 }
+
+void display() {
+    //Update the screen
+	myChip8.drawGraphic();
+	
+    glutSwapBuffers();
+	glutPostRedisplay();
+}
 void timer(int t){
 	glutTimerFunc(1000.0/FPS, timer, 0);
+	
 	//Emulate one cycle
     myChip8.emulateCycle();
-    
-    //Update the screen if the draw flag is set.
-    //if(myChip8.drawFlag==1)
-    //    myChip8.drawGraphic();
-
-    //glutPostRedisplay();
-    //Sleep((double)1000/120);
-}
-void display() {
 	
-    //Emulate one cycle
-    //myChip8.emulateCycle();
-    
     //Update the screen if the draw flag is set.
-    //if(myChip8.drawFlag==1)
-    myChip8.drawGraphic();
-
-    glutPostRedisplay();
-	//glutTimerFunc(1000.0/60, display, 0);
-    //Sleep((double)1000/120);
+	if(myChip8.drawFlag==1)
+		display();
 }
 int main(int argc, char **argv)
 {
@@ -71,8 +72,8 @@ int main(int argc, char **argv)
     printf("Done!\n");
     glutInit(&a, argv);                 // Initialize GLUT
     glutInitWindowPosition(10, 10); // Position the window's initial top-left corner
-    glutInitWindowSize(800,800);   // Set the window's initial width & height
-    glutCreateWindow("OpenGL Setup Test"); // Create a window with the given title
+    glutInitWindowSize(1200,800);   // Set the window's initial width & height
+    glutCreateWindow("Chip8"); // Create a window with the given title
     glutKeyboardFunc(keyboard);
     glutDisplayFunc(display); // Register display callback handler for window re-paint
     //glutIdleFunc(display);
