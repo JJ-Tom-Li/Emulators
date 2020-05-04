@@ -49,8 +49,9 @@ void display() {
     //Update the screen
 	myChip8.drawGraphic();
 	
+	
     glutSwapBuffers();
-	glutPostRedisplay();
+    //glutPostRedisplay();
 }
 void timer(int t){
 	glutTimerFunc(1000.0/FPS, timer, 0);
@@ -72,14 +73,14 @@ int main(int argc, char **argv)
     printf("Done!\n");
     glutInit(&a, argv);                 // Initialize GLUT
     glutInitWindowPosition(10, 10); // Position the window's initial top-left corner
-    glutInitWindowSize(1200,800);   // Set the window's initial width & height
+    glutInitWindowSize(1280,720);   // Set the window's initial width & height
     glutCreateWindow("Chip8"); // Create a window with the given title
     glutKeyboardFunc(keyboard);
     glutDisplayFunc(display); // Register display callback handler for window re-paint
     //glutIdleFunc(display);
 	createList();
 	glutTimerFunc( 1000.0/FPS, timer, 0); ///註冊一個計時器函式, 第一次進入時間是 10 msec 後呼叫
-	timer(0) ;
+	//timer(0) ;
     glutMainLoop();           // Enter the event-processing loop
     
      

@@ -515,7 +515,7 @@ void Chip8::emulateCycle(){
 }
 void Chip8::drawGraphic(){
     int i,j;
-    //glClearColor(0.0f, 0.0f, 0.0f, 1.0f); // Set background color to black and opaque
+    glClearColor(0.0f, 0.0f, 0.0f, 1.0f); // Set background color to black and opaque
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);       // Clear the color buffer (background)
     
 	glColor3f(1.0,1.0,1.0); // white
