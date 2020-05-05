@@ -1,13 +1,12 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include "chip8.h"  //The chip8 cpu core implementation
+#include "include/Chip8/chip8.h"  //The chip8 cpu core implementation
 #include <windows.h>  // for MS Windows
 /*
     This program is CHIP-8 Emulator.
 */
-#define FPS 240
-char *filename; 
-//Initialize chip8 system and load game into memory.
+#define CPU_RATE 500
+//Initialize chip8 system.
 Chip8 myChip8 = Chip8();
 void keyboard(unsigned char key, int x, int y){
     switch(key){
@@ -29,7 +28,7 @@ void keyboard(unsigned char key, int x, int y){
         case 'd':
         case 'e':
         case 'f':
-            myChip8.input = key - '7'-' ';
+            myChip8.input = key - '7'-' '; //Turn input key into hex number.
             break;
 		case 'A':
 		case 'B':
@@ -54,7 +53,7 @@ void display() {
     //glutPostRedisplay();
 }
 void timer(int t){
-	glutTimerFunc(1000.0/FPS, timer, 0);
+	glutTimerFunc(1000.0/CPU_RATE, timer, 0);
 	
 	//Emulate one cycle
     myChip8.emulateCycle();
@@ -65,22 +64,17 @@ void timer(int t){
 }
 int main(int argc, char **argv)
 {
-    
-    filename = argv[1];
-    int a = 1; 
-    printf("Loading Game : %s...",filename);
-    myChip8.loadGame(filename);
-    printf("Done!\n");
-    glutInit(&a, argv);                 // Initialize GLUT
-    glutInitWindowPosition(10, 10); // Position the window's initial top-left corner
+	char *filename = argv[1];
+    if(!myChip8.loadGame(filename))
+		exit(0); //File no found.
+    glutInit(&argc, argv);          // Initialize GLUT
+    glutInitWindowPosition(10, 10); // Position the window.
     glutInitWindowSize(1280,720);   // Set the window's initial width & height
-    glutCreateWindow("Chip8"); // Create a window with the given title
-    glutKeyboardFunc(keyboard);
-    glutDisplayFunc(display); // Register display callback handler for window re-paint
-    //glutIdleFunc(display);
+    glutCreateWindow("Chip8"); 		// Create a window with the given title
+    glutKeyboardFunc(keyboard);		// The keyboard input
+    glutDisplayFunc(display); 
 	createList();
-	glutTimerFunc( 1000.0/FPS, timer, 0); ///註冊一個計時器函式, 第一次進入時間是 10 msec 後呼叫
-	//timer(0) ;
+	glutTimerFunc( 1000.0/CPU_RATE, timer, 0); 
     glutMainLoop();           // Enter the event-processing loop
     
      
