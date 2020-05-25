@@ -1,6 +1,6 @@
 # Chip 8 模擬器 Chip 8 Emulator  
 ## 介紹 What is this? 
-就chip8的模擬器，目前測試INVADERS,BRIX跑起來沒什麼問題，其他沒測試過不確定。  
+[chip8](https://en.wikipedia.org/wiki/CHIP-8)的模擬器，目前測試INVADERS,BRIX跑起來沒什麼問題，其他沒測試過不確定。  
 This is a CHIP8 emulator. I have run the INVADERS and BRIX roms on the emulator, and it did work. But I have no idea how are other roms.  
 
 ## 建置環境 Build Environment  
@@ -38,5 +38,6 @@ https://github.com/cheukyin699/chip-8-tools
 https://youtu.be/_KT1Q2-vluM  
 
 ## 參考資料  
+https://en.wikipedia.org/wiki/CHIP-8  
 http://devernay.free.fr/hacks/chip8/C8TECH10.HTM  
 http://www.multigesture.net/articles/how-to-write-an-emulator-chip-8-interpreter/  
