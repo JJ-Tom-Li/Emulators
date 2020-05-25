@@ -18,13 +18,13 @@ Run make in Emulators/Chip8:
 .make
 ```
 
-## 執行方式
+## 執行方式 How to run this program  
 開啟cmd，輸入以下指令(INVADERS可換成任何rom檔名稱):  
 Open cmd in this directory and input the instruction below:  
 ```
 ./a c8games/INVADERS
 ```  
-## 操作方式  
+## 操作方式 Game controll   
 數字鍵 1-9，英文字母 A-F  
 keyboard 1-9 and A-E  
 INVADERS的操作方法為:46左右移動，5發射  
@@ -37,7 +37,7 @@ https://github.com/cheukyin699/chip-8-tools
 ## 實際運行影片 Demo  
 https://youtu.be/_KT1Q2-vluM  
 
-## 參考資料  
+## 參考資料 Reference  
 https://en.wikipedia.org/wiki/CHIP-8  
 http://devernay.free.fr/hacks/chip8/C8TECH10.HTM  
 http://www.multigesture.net/articles/how-to-write-an-emulator-chip-8-interpreter/  
