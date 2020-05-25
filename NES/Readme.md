@@ -1,1 +1,1 @@
-應該會先做個6502 compiler吧
+應該會先做個6502 compiler  
